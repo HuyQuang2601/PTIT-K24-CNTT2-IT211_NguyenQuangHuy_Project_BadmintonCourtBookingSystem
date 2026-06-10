@@ -1,0 +1,9 @@
+package project.badminton.file;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+
+public interface CloudStorageService {
+    String upload(MultipartFile file) throws IOException;
+}
