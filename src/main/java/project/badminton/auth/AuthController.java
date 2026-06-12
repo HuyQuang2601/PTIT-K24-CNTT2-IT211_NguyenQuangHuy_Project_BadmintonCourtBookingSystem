@@ -14,8 +14,10 @@ import project.badminton.auth.dto.AuthResponse;
 import project.badminton.auth.dto.ChangePasswordRequest;
 import project.badminton.auth.dto.ForgotPasswordRequest;
 import project.badminton.auth.dto.LoginRequest;
+import project.badminton.auth.dto.PasswordResetRequestedResponse;
 import project.badminton.auth.dto.RefreshTokenRequest;
 import project.badminton.auth.dto.RegisterRequest;
+import project.badminton.auth.dto.ResetPasswordRequest;
 import project.badminton.common.ApiResponse;
 import project.badminton.user.dto.UserResponse;
 
@@ -57,8 +59,16 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        authService.requestPasswordReset(request.email());
-        return ResponseEntity.ok(ApiResponse.ok("If the email exists, reset instructions will be sent", null));
+    public ResponseEntity<ApiResponse<PasswordResetRequestedResponse>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                "If the email exists, reset instructions will be sent",
+                authService.requestPasswordReset(request.email())
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.ok("Password reset successfully", null));
     }
 }

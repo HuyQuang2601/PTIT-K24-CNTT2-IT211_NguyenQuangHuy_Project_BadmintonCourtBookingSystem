@@ -109,8 +109,14 @@ public class BookingService {
     @Transactional
     public BookingResponse approve(Long id) {
         Booking booking = findBooking(id);
-        if (hasConflict(booking.getCourt().getId(), booking.getBookingDate(), booking.getTimeSlot().getId())
-                && booking.getStatus() != BookingStatus.PENDING) {
+        requireStatus(booking, BookingStatus.PENDING, "Only pending bookings can be approved");
+        if (bookingRepository.existsByCourtIdAndBookingDateAndTimeSlotIdAndStatusInAndIdNot(
+                booking.getCourt().getId(),
+                booking.getBookingDate(),
+                booking.getTimeSlot().getId(),
+                BLOCKING_STATUSES,
+                booking.getId()
+        )) {
             throw new BusinessException(HttpStatus.CONFLICT, "Court is already booked for this time slot");
         }
         booking.setStatus(BookingStatus.CONFIRMED);
@@ -120,6 +126,7 @@ public class BookingService {
     @Transactional
     public BookingResponse reject(Long id) {
         Booking booking = findBooking(id);
+        requireStatus(booking, BookingStatus.PENDING, "Only pending bookings can be rejected");
         booking.setStatus(BookingStatus.REJECTED);
         return toResponse(booking);
     }
@@ -127,9 +134,7 @@ public class BookingService {
     @Transactional
     public BookingResponse checkIn(Long id) {
         Booking booking = findBooking(id);
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Only confirmed bookings can be checked in");
-        }
+        requireStatus(booking, BookingStatus.CONFIRMED, "Only confirmed bookings can be checked in");
         booking.setStatus(BookingStatus.CHECKED_IN);
         return toResponse(booking);
     }
@@ -141,6 +146,12 @@ public class BookingService {
     private Booking findBooking(Long id) {
         return bookingRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Booking not found"));
+    }
+
+    private void requireStatus(Booking booking, BookingStatus requiredStatus, String message) {
+        if (booking.getStatus() != requiredStatus) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, message);
+        }
     }
 
     public BookingResponse toResponse(Booking booking) {

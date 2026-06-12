@@ -10,25 +10,19 @@ import java.util.HexFormat;
 
 @Service
 public class TokenBlacklistService {
-    private final TokenBlacklistRepository repository;
+    private final TokenBlacklistStore store;
 
-    public TokenBlacklistService(TokenBlacklistRepository repository) {
-        this.repository = repository;
+    public TokenBlacklistService(TokenBlacklistStore store) {
+        this.store = store;
     }
 
     public void blacklist(String token, Instant expiresAt) {
         String hash = hash(token);
-        if (repository.existsByTokenHash(hash)) {
-            return;
-        }
-        TokenBlacklist blacklist = new TokenBlacklist();
-        blacklist.setTokenHash(hash);
-        blacklist.setExpiresAt(expiresAt);
-        repository.save(blacklist);
+        store.save(hash, expiresAt);
     }
 
     public boolean isBlacklisted(String token) {
-        return repository.existsByTokenHash(hash(token));
+        return store.contains(hash(token));
     }
 
     private String hash(String token) {

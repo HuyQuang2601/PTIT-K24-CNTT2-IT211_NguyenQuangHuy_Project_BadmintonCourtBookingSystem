@@ -9,6 +9,8 @@ import project.badminton.court.CourtService;
 import project.badminton.court.dto.CourtResponse;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -18,15 +20,18 @@ public class FileStorageService {
     private final CloudStorageService cloudStorageService;
     private final CourtService courtService;
     private final long maxFileBytes;
+    private final int maxFiles;
 
     public FileStorageService(
             CloudStorageService cloudStorageService,
             CourtService courtService,
-            @Value("${app.upload.max-file-bytes}") long maxFileBytes
+            @Value("${app.upload.max-file-bytes}") long maxFileBytes,
+            @Value("${app.upload.max-files:5}") int maxFiles
     ) {
         this.cloudStorageService = cloudStorageService;
         this.courtService = courtService;
         this.maxFileBytes = maxFileBytes;
+        this.maxFiles = maxFiles;
     }
 
     public String upload(MultipartFile file) throws IOException {
@@ -37,6 +42,37 @@ public class FileStorageService {
     public CourtResponse uploadCourtImage(Long courtId, MultipartFile file) throws IOException {
         String imageUrl = upload(file);
         return courtService.addImage(courtId, imageUrl);
+    }
+
+    public List<String> uploadAll(List<MultipartFile> files) throws IOException {
+        validateFiles(files);
+        try {
+            return files.stream()
+                    .map(file -> {
+                        try {
+                            return cloudStorageService.upload(file);
+                        } catch (IOException ex) {
+                            throw new UncheckedIOException(ex);
+                        }
+                    })
+                    .toList();
+        } catch (UncheckedIOException ex) {
+            throw ex.getCause();
+        }
+    }
+
+    public CourtResponse uploadCourtImages(Long courtId, List<MultipartFile> files) throws IOException {
+        return courtService.addImages(courtId, uploadAll(files));
+    }
+
+    private void validateFiles(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "At least one image is required");
+        }
+        if (files.size() > maxFiles) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "A maximum of " + maxFiles + " images is allowed");
+        }
+        files.forEach(this::validate);
     }
 
     private void validate(MultipartFile file) {

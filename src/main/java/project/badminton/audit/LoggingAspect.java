@@ -1,9 +1,13 @@
 package project.badminton.audit;
 
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
+import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import project.badminton.booking.dto.BookingCreateRequest;
 import project.badminton.booking.dto.BookingResponse;
@@ -11,10 +15,29 @@ import project.badminton.booking.dto.BookingResponse;
 @Aspect
 @Component
 public class LoggingAspect {
-    private final AuditLogRepository auditLogRepository;
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingAspect.class);
 
-    public LoggingAspect(AuditLogRepository auditLogRepository) {
-        this.auditLogRepository = auditLogRepository;
+    private final AuditLogService auditLogService;
+
+    public LoggingAspect(AuditLogService auditLogService) {
+        this.auditLogService = auditLogService;
+    }
+
+    @Around("execution(public * project.badminton..*Controller.*(..)) || execution(public * project.badminton..*Service.*(..))")
+    public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
+        long startedAt = System.nanoTime();
+        String operation = joinPoint.getSignature().toShortString();
+        try {
+            Object result = joinPoint.proceed();
+            LOGGER.info("[PERFORMANCE - SUCCESS] operation={} durationMs={}", operation, elapsedMillis(startedAt));
+            return result;
+        } catch (Throwable throwable) {
+            LOGGER.warn("[PERFORMANCE - FAILED] operation={} durationMs={} errorType={}",
+                    operation,
+                    elapsedMillis(startedAt),
+                    throwable.getClass().getSimpleName());
+            throw throwable;
+        }
     }
 
     @AfterReturning(pointcut = "execution(* project.badminton.booking.BookingService.createBooking(..))", returning = "result")
@@ -25,7 +48,7 @@ public class LoggingAspect {
                 + " booked court " + result.courtName()
                 + " on " + result.bookingDate()
                 + ", time slot " + result.timeRange();
-        save("BOOKING_CREATE", username, message, true);
+        auditLogService.save("BOOKING_CREATE", username, message, true);
     }
 
     @AfterThrowing(pointcut = "execution(* project.badminton.booking.BookingService.createBooking(..))", throwing = "exception")
@@ -38,7 +61,7 @@ public class LoggingAspect {
         String message = "[AUDIT - FAILED] Customer " + username
                 + " attempted booking " + target
                 + " but failed because " + exception.getMessage();
-        save("BOOKING_CREATE", username, message, false);
+        auditLogService.save("BOOKING_CREATE", username, message, false);
     }
 
     private String usernameFrom(JoinPoint joinPoint) {
@@ -51,12 +74,7 @@ public class LoggingAspect {
         return args.length > 1 && args[1] instanceof BookingCreateRequest request ? request : null;
     }
 
-    private void save(String action, String username, String message, boolean success) {
-        AuditLog auditLog = new AuditLog();
-        auditLog.setAction(action);
-        auditLog.setUsername(username);
-        auditLog.setMessage(message);
-        auditLog.setSuccess(success);
-        auditLogRepository.save(auditLog);
+    private long elapsedMillis(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000;
     }
 }

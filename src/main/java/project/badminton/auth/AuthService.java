@@ -11,11 +11,15 @@ import org.springframework.transaction.annotation.Transactional;
 import project.badminton.auth.dto.AuthResponse;
 import project.badminton.auth.dto.ChangePasswordRequest;
 import project.badminton.auth.dto.LoginRequest;
+import project.badminton.auth.dto.PasswordResetRequestedResponse;
 import project.badminton.auth.dto.RefreshTokenRequest;
 import project.badminton.auth.dto.RegisterRequest;
+import project.badminton.auth.dto.ResetPasswordRequest;
 import project.badminton.common.BusinessException;
 import project.badminton.security.CustomUserDetailsService;
 import project.badminton.security.JwtService;
+import project.badminton.security.PasswordResetToken;
+import project.badminton.security.PasswordResetTokenRepository;
 import project.badminton.security.RefreshToken;
 import project.badminton.security.RefreshTokenRepository;
 import project.badminton.security.TokenBlacklistService;
@@ -25,6 +29,10 @@ import project.badminton.user.UserRepository;
 import project.badminton.user.dto.UserResponse;
 
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -38,7 +46,10 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenBlacklistService tokenBlacklistService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final long refreshTokenSeconds;
+    private final long passwordResetTokenSeconds;
+    private final boolean exposePasswordResetToken;
 
     public AuthService(
             AuthenticationManager authenticationManager,
@@ -48,7 +59,10 @@ public class AuthService {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             TokenBlacklistService tokenBlacklistService,
-            @Value("${app.jwt.refresh-token-seconds}") long refreshTokenSeconds
+            PasswordResetTokenRepository passwordResetTokenRepository,
+            @Value("${app.jwt.refresh-token-seconds}") long refreshTokenSeconds,
+            @Value("${app.password-reset.token-seconds:900}") long passwordResetTokenSeconds,
+            @Value("${app.password-reset.expose-token:false}") boolean exposePasswordResetToken
     ) {
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
@@ -57,7 +71,10 @@ public class AuthService {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.refreshTokenSeconds = refreshTokenSeconds;
+        this.passwordResetTokenSeconds = passwordResetTokenSeconds;
+        this.exposePasswordResetToken = exposePasswordResetToken;
     }
 
     @Transactional
@@ -96,11 +113,15 @@ public class AuthService {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(request.refreshToken())
                 .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
         if (refreshToken.isRevoked() || refreshToken.getExpiresAt().isBefore(Instant.now())) {
+            refreshTokenRepository.findByUserAndRevokedFalse(refreshToken.getUser())
+                    .forEach(activeToken -> activeToken.setRevoked(true));
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "Refresh token expired or revoked");
         }
         User user = refreshToken.getUser();
+        refreshToken.setRevoked(true);
+        RefreshToken rotatedToken = createRefreshToken(user);
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        return authResponse(jwtService.generateAccessToken(userDetails), refreshToken.getToken(), user);
+        return authResponse(jwtService.generateAccessToken(userDetails), rotatedToken.getToken(), user);
     }
 
     @Transactional
@@ -121,13 +142,39 @@ public class AuthService {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
         }
         user.setPassword(passwordEncoder.encode(request.newPassword()));
+        refreshTokenRepository.findByUserAndRevokedFalse(user)
+                .forEach(refreshToken -> refreshToken.setRevoked(true));
     }
 
-    public void requestPasswordReset(String email) {
-        if (!userRepository.existsByEmail(email)) {
-            return;
+    @Transactional
+    public PasswordResetRequestedResponse requestPasswordReset(String email) {
+        return userRepository.findByEmail(email)
+                .map(user -> {
+                    passwordResetTokenRepository.deleteByUser(user);
+                    String rawToken = UUID.randomUUID().toString();
+                    PasswordResetToken resetToken = new PasswordResetToken();
+                    resetToken.setTokenHash(hash(rawToken));
+                    resetToken.setUser(user);
+                    resetToken.setExpiresAt(Instant.now().plusSeconds(passwordResetTokenSeconds));
+                    passwordResetTokenRepository.save(resetToken);
+                    return new PasswordResetRequestedResponse(exposePasswordResetToken ? rawToken : null);
+                })
+                .orElseGet(() -> new PasswordResetRequestedResponse(null));
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(hash(request.token()))
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token"));
+        if (resetToken.getUsedAt() != null || !resetToken.getExpiresAt().isAfter(Instant.now())) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token");
         }
-        // In a real deployment this should enqueue an email with a single-use reset token.
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        resetToken.setUsedAt(Instant.now());
+        refreshTokenRepository.findByUserAndRevokedFalse(user)
+                .forEach(refreshToken -> refreshToken.setRevoked(true));
     }
 
     private RefreshToken createRefreshToken(User user) {
@@ -166,5 +213,14 @@ public class AuthService {
                 user.isEnabled(),
                 user.getCreatedAt()
         );
+    }
+
+    private String hash(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 is not available", ex);
+        }
     }
 }

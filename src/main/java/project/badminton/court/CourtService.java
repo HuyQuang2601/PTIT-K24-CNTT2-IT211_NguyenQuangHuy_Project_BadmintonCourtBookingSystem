@@ -72,6 +72,13 @@ public class CourtService {
         return toResponse(court);
     }
 
+    @Transactional
+    public CourtResponse addImages(Long courtId, List<String> imageUrls) {
+        Court court = findById(courtId);
+        court.getImageUrls().addAll(imageUrls);
+        return toResponse(court);
+    }
+
     public Court findById(Long id) {
         return courtRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Court not found"));
