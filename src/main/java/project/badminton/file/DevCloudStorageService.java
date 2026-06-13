@@ -13,7 +13,7 @@ public class DevCloudStorageService implements CloudStorageService {
     @Override
     public String upload(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
-            throw new IOException("Empty file cannot be uploaded");
+            throw new IOException("Không thể tải lên tệp rỗng");
         }
         String extension = extension(file.getOriginalFilename());
         return "https://storage.local/badminton/" + UUID.randomUUID() + extension;

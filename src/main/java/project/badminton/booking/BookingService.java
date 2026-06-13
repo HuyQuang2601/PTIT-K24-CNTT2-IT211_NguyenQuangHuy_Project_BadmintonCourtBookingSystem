@@ -43,16 +43,16 @@ public class BookingService {
     @Transactional
     public BookingResponse createBooking(String username, BookingCreateRequest request) {
         User customer = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Customer not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy khách hàng"));
         Court court = courtRepository.findById(request.courtId())
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Court not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy sân cầu lông"));
         TimeSlot timeSlot = timeSlotService.findById(request.timeSlotId());
 
         if (!court.isActive() || !timeSlot.isActive()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Court or time slot is inactive");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Sân hoặc khung giờ hiện không hoạt động");
         }
         if (hasConflict(court.getId(), request.bookingDate(), timeSlot.getId())) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Court is already booked for this time slot");
+            throw new BusinessException(HttpStatus.CONFLICT, "Sân đã được đặt trong khung giờ này");
         }
 
         Booking booking = new Booking();
@@ -65,20 +65,23 @@ public class BookingService {
         return toResponse(bookingRepository.save(booking));
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponse> customerHistory(String username) {
         User customer = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Customer not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy khách hàng"));
         return bookingRepository.findByCustomerOrderByBookingDateDescCreatedAtDesc(customer).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponse> pendingBookings() {
         return bookingRepository.findByStatusOrderByCreatedAtDesc(BookingStatus.PENDING).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponse> bookingsByDateAndStatus(LocalDate date, BookingStatus status) {
         return bookingRepository.findByBookingDateAndStatus(date, status).stream()
                 .filter(booking -> booking.getCourt().isActive())
@@ -89,7 +92,7 @@ public class BookingService {
     public List<CourtResponse> availableCourts(LocalDate date, Long timeSlotId) {
         TimeSlot timeSlot = timeSlotService.findById(timeSlotId);
         if (!timeSlot.isActive()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Time slot is inactive");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Khung giờ hiện không hoạt động");
         }
         return courtRepository.findByActiveTrue().stream()
                 .filter(court -> !hasConflict(court.getId(), date, timeSlotId))
@@ -109,7 +112,7 @@ public class BookingService {
     @Transactional
     public BookingResponse approve(Long id) {
         Booking booking = findBooking(id);
-        requireStatus(booking, BookingStatus.PENDING, "Only pending bookings can be approved");
+        requireStatus(booking, BookingStatus.PENDING, "Chỉ có thể phê duyệt lịch đặt đang chờ xử lý");
         if (bookingRepository.existsByCourtIdAndBookingDateAndTimeSlotIdAndStatusInAndIdNot(
                 booking.getCourt().getId(),
                 booking.getBookingDate(),
@@ -117,7 +120,7 @@ public class BookingService {
                 BLOCKING_STATUSES,
                 booking.getId()
         )) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Court is already booked for this time slot");
+            throw new BusinessException(HttpStatus.CONFLICT, "Sân đã được đặt trong khung giờ này");
         }
         booking.setStatus(BookingStatus.CONFIRMED);
         return toResponse(booking);
@@ -126,7 +129,7 @@ public class BookingService {
     @Transactional
     public BookingResponse reject(Long id) {
         Booking booking = findBooking(id);
-        requireStatus(booking, BookingStatus.PENDING, "Only pending bookings can be rejected");
+        requireStatus(booking, BookingStatus.PENDING, "Chỉ có thể từ chối lịch đặt đang chờ xử lý");
         booking.setStatus(BookingStatus.REJECTED);
         return toResponse(booking);
     }
@@ -134,7 +137,7 @@ public class BookingService {
     @Transactional
     public BookingResponse checkIn(Long id) {
         Booking booking = findBooking(id);
-        requireStatus(booking, BookingStatus.CONFIRMED, "Only confirmed bookings can be checked in");
+        requireStatus(booking, BookingStatus.CONFIRMED, "Chỉ có thể check-in lịch đặt đã được xác nhận");
         booking.setStatus(BookingStatus.CHECKED_IN);
         return toResponse(booking);
     }
@@ -145,7 +148,7 @@ public class BookingService {
 
     private Booking findBooking(Long id) {
         return bookingRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Booking not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy lịch đặt sân"));
     }
 
     private void requireStatus(Booking booking, BookingStatus requiredStatus, String message) {

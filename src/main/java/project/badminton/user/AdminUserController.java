@@ -30,23 +30,23 @@ public class AdminUserController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<UserResponse>>> search(@RequestParam(required = false) String keyword, Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok("Users retrieved successfully", userService.search(keyword, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách người dùng thành công", userService.search(keyword, pageable)));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> get(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok("User retrieved successfully", userService.get(id)));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy thông tin người dùng thành công", userService.get(id)));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> create(@Valid @RequestBody UserRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("User created successfully", userService.create(request)));
+                .body(ApiResponse.ok("Tạo người dùng thành công", userService.create(request)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> update(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("User updated successfully", userService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.ok("Cập nhật người dùng thành công", userService.update(id, request)));
     }
 
     @DeleteMapping("/{id}")

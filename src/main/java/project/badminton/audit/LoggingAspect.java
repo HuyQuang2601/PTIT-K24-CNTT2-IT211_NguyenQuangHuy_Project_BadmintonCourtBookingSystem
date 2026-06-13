@@ -29,10 +29,10 @@ public class LoggingAspect {
         String operation = joinPoint.getSignature().toShortString();
         try {
             Object result = joinPoint.proceed();
-            LOGGER.info("[PERFORMANCE - SUCCESS] operation={} durationMs={}", operation, elapsedMillis(startedAt));
+            LOGGER.info("[HIỆU NĂNG - THÀNH CÔNG] chức_năng={} thời_gian_ms={}", operation, elapsedMillis(startedAt));
             return result;
         } catch (Throwable throwable) {
-            LOGGER.warn("[PERFORMANCE - FAILED] operation={} durationMs={} errorType={}",
+            LOGGER.warn("[HIỆU NĂNG - THẤT BẠI] chức_năng={} thời_gian_ms={} loại_lỗi={}",
                     operation,
                     elapsedMillis(startedAt),
                     throwable.getClass().getSimpleName());
@@ -44,11 +44,11 @@ public class LoggingAspect {
     public void logBookingSuccess(JoinPoint joinPoint, BookingResponse result) {
         BookingCreateRequest request = requestFrom(joinPoint);
         String username = usernameFrom(joinPoint);
-        String message = "[AUDIT - SUCCESS] Customer " + username
-                + " booked court " + result.courtName()
-                + " on " + result.bookingDate()
-                + ", time slot " + result.timeRange();
-        auditLogService.save("BOOKING_CREATE", username, message, true);
+        String message = "[KIỂM TOÁN - THÀNH CÔNG] Khách hàng " + username
+                + " đã đặt sân " + result.courtName()
+                + " vào ngày " + result.bookingDate()
+                + ", khung giờ " + result.timeRange();
+        auditLogService.save("TAO_LICH_DAT_SAN", username, message, true);
     }
 
     @AfterThrowing(pointcut = "execution(* project.badminton.booking.BookingService.createBooking(..))", throwing = "exception")
@@ -56,17 +56,17 @@ public class LoggingAspect {
         BookingCreateRequest request = requestFrom(joinPoint);
         String username = usernameFrom(joinPoint);
         String target = request == null
-                ? "unknown court/time slot"
-                : "courtId=" + request.courtId() + ", date=" + request.bookingDate() + ", timeSlotId=" + request.timeSlotId();
-        String message = "[AUDIT - FAILED] Customer " + username
-                + " attempted booking " + target
-                + " but failed because " + exception.getMessage();
-        auditLogService.save("BOOKING_CREATE", username, message, false);
+                ? "sân/khung giờ không xác định"
+                : "mã sân=" + request.courtId() + ", ngày=" + request.bookingDate() + ", mã khung giờ=" + request.timeSlotId();
+        String message = "[KIỂM TOÁN - THẤT BẠI] Khách hàng " + username
+                + " đã thử đặt " + target
+                + " nhưng thất bại vì " + exception.getMessage();
+        auditLogService.save("TAO_LICH_DAT_SAN", username, message, false);
     }
 
     private String usernameFrom(JoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
-        return args.length > 0 && args[0] instanceof String username ? username : "anonymous";
+        return args.length > 0 && args[0] instanceof String username ? username : "ẩn danh";
     }
 
     private BookingCreateRequest requestFrom(JoinPoint joinPoint) {

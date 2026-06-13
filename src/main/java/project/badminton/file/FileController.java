@@ -26,7 +26,7 @@ public class FileController {
 
     @PostMapping("/upload")
     public ResponseEntity<ApiResponse<FileUploadResponse>> upload(@RequestPart("file") MultipartFile file) throws IOException {
-        return ResponseEntity.ok(ApiResponse.ok("File uploaded successfully", new FileUploadResponse(fileStorageService.upload(file))));
+        return ResponseEntity.ok(ApiResponse.ok("Tải tệp lên thành công", new FileUploadResponse(fileStorageService.upload(file))));
     }
 
     @PostMapping("/upload-multiple")
@@ -34,7 +34,7 @@ public class FileController {
             @RequestPart("files") List<MultipartFile> files
     ) throws IOException {
         return ResponseEntity.ok(ApiResponse.ok(
-                "Files uploaded successfully",
+                "Tải các tệp lên thành công",
                 new MultiFileUploadResponse(fileStorageService.uploadAll(files))
         ));
     }
@@ -44,7 +44,7 @@ public class FileController {
             @PathVariable Long courtId,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
-        return ResponseEntity.ok(ApiResponse.ok("Court image uploaded successfully", fileStorageService.uploadCourtImage(courtId, file)));
+        return ResponseEntity.ok(ApiResponse.ok("Tải ảnh sân cầu lông lên thành công", fileStorageService.uploadCourtImage(courtId, file)));
     }
 
     @PostMapping("/courts/{courtId}/images/multiple")
@@ -53,7 +53,7 @@ public class FileController {
             @RequestPart("files") List<MultipartFile> files
     ) throws IOException {
         return ResponseEntity.ok(ApiResponse.ok(
-                "Court images uploaded successfully",
+                "Tải các ảnh sân cầu lông lên thành công",
                 fileStorageService.uploadCourtImages(courtId, files)
         ));
     }

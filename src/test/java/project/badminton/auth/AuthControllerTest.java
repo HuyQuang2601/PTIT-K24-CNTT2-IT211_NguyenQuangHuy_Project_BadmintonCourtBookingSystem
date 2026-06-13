@@ -44,6 +44,7 @@ class AuthControllerTest {
         var response = controller.register(request);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("Đăng ký tài khoản thành công", response.getBody().message());
         assertEquals("student", response.getBody().data().username());
     }
 
@@ -55,6 +56,7 @@ class AuthControllerTest {
         var response = controller.login(request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Đăng nhập thành công", response.getBody().message());
         assertEquals("access-token", response.getBody().data().accessToken());
     }
 
@@ -65,6 +67,7 @@ class AuthControllerTest {
 
         var response = controller.refresh(request);
 
+        assertEquals("Làm mới token thành công", response.getBody().message());
         assertEquals("rotated-refresh-token", response.getBody().data().refreshToken());
     }
 
@@ -77,6 +80,7 @@ class AuthControllerTest {
         var response = controller.forgotPassword(request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Nếu email tồn tại, hướng dẫn đặt lại mật khẩu sẽ được gửi", response.getBody().message());
         assertEquals("reset-token", response.getBody().data().resetToken());
     }
 
@@ -88,6 +92,7 @@ class AuthControllerTest {
 
         verify(authService).resetPassword(request);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Đặt lại mật khẩu thành công", response.getBody().message());
         assertNull(response.getBody().data());
     }
 

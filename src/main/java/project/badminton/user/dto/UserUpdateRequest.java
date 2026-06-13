@@ -9,10 +9,12 @@ import project.badminton.user.Role;
 import java.util.Set;
 
 public record UserUpdateRequest(
-        @NotBlank @Email String email,
-        @NotBlank @Size(max = 120) String fullName,
-        @Size(max = 20) String phone,
-        @NotEmpty Set<Role> roles,
+        @NotBlank(message = "Email không được để trống")
+        @Email(message = "Email không đúng định dạng") String email,
+        @NotBlank(message = "Họ tên không được để trống")
+        @Size(max = 120, message = "Họ tên không được vượt quá 120 ký tự") String fullName,
+        @Size(max = 20, message = "Số điện thoại không được vượt quá 20 ký tự") String phone,
+        @NotEmpty(message = "Người dùng phải có ít nhất một vai trò") Set<Role> roles,
         boolean enabled
 ) {
 }

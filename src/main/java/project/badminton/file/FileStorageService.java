@@ -67,23 +67,23 @@ public class FileStorageService {
 
     private void validateFiles(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "At least one image is required");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Cần chọn ít nhất một ảnh");
         }
         if (files.size() > maxFiles) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "A maximum of " + maxFiles + " images is allowed");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Chỉ được tải lên tối đa " + maxFiles + " ảnh");
         }
         files.forEach(this::validate);
     }
 
     private void validate(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "File is required");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Vui lòng chọn tệp cần tải lên");
         }
         if (!ALLOWED_TYPES.contains(file.getContentType())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Only PNG and JPG images are allowed");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Chỉ chấp nhận ảnh định dạng PNG hoặc JPG");
         }
         if (file.getSize() > maxFileBytes) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "File size exceeds allowed limit");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Dung lượng tệp vượt quá giới hạn cho phép");
         }
     }
 }

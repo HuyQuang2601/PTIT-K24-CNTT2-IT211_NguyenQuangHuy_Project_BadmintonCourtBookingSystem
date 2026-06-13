@@ -34,19 +34,20 @@ public class CustomerBookingController {
     @PostMapping
     public ResponseEntity<ApiResponse<BookingResponse>> create(Authentication authentication, @Valid @RequestBody BookingCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Booking created successfully", bookingService.createBooking(authentication.getName(), request)));
+                .body(ApiResponse.ok("Đặt sân thành công", bookingService.createBooking(authentication.getName(), request)));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<BookingResponse>>> history(Authentication authentication) {
-        return ResponseEntity.ok(ApiResponse.ok("Bookings retrieved successfully", bookingService.customerHistory(authentication.getName())));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy lịch sử đặt sân thành công", bookingService.customerHistory(authentication.getName())));
     }
 
     @GetMapping("/available-courts")
     public ResponseEntity<ApiResponse<List<CourtResponse>>> availableCourts(
-            @RequestParam @NotNull @FutureOrPresent LocalDate date,
-            @RequestParam @NotNull Long timeSlotId
+            @RequestParam @NotNull(message = "Ngày cần kiểm tra không được để trống")
+            @FutureOrPresent(message = "Ngày cần kiểm tra phải là ngày hiện tại hoặc trong tương lai") LocalDate date,
+            @RequestParam @NotNull(message = "Mã khung giờ không được để trống") Long timeSlotId
     ) {
-        return ResponseEntity.ok(ApiResponse.ok("Available courts retrieved successfully", bookingService.availableCourts(date, timeSlotId)));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách sân còn trống thành công", bookingService.availableCourts(date, timeSlotId)));
     }
 }

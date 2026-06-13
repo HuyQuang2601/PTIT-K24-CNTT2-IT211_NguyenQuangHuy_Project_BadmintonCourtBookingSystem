@@ -33,35 +33,35 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Registered successfully", authService.register(request)));
+                .body(ApiResponse.ok("Đăng ký tài khoản thành công", authService.register(request)));
     }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Logged in successfully", authService.login(request)));
+        return ResponseEntity.ok(ApiResponse.ok("Đăng nhập thành công", authService.login(request)));
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Token refreshed successfully", authService.refresh(request)));
+        return ResponseEntity.ok(ApiResponse.ok("Làm mới token thành công", authService.refresh(request)));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
         authService.logout(authorization);
-        return ResponseEntity.ok(ApiResponse.ok("Logged out successfully", null));
+        return ResponseEntity.ok(ApiResponse.ok("Đăng xuất thành công", null));
     }
 
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<Void>> changePassword(Authentication authentication, @Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(authentication.getName(), request);
-        return ResponseEntity.ok(ApiResponse.ok("Password changed successfully", null));
+        return ResponseEntity.ok(ApiResponse.ok("Đổi mật khẩu thành công", null));
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<PasswordResetRequestedResponse>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(
-                "If the email exists, reset instructions will be sent",
+                "Nếu email tồn tại, hướng dẫn đặt lại mật khẩu sẽ được gửi",
                 authService.requestPasswordReset(request.email())
         ));
     }
@@ -69,6 +69,6 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
-        return ResponseEntity.ok(ApiResponse.ok("Password reset successfully", null));
+        return ResponseEntity.ok(ApiResponse.ok("Đặt lại mật khẩu thành công", null));
     }
 }

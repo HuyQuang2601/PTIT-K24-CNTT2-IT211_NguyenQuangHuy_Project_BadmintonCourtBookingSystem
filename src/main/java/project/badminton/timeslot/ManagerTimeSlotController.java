@@ -28,18 +28,18 @@ public class ManagerTimeSlotController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TimeSlotResponse>>> all() {
-        return ResponseEntity.ok(ApiResponse.ok("Time slots retrieved successfully", timeSlotService.all()));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách khung giờ thành công", timeSlotService.all()));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<TimeSlotResponse>> create(@Valid @RequestBody TimeSlotRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Time slot created successfully", timeSlotService.create(request)));
+                .body(ApiResponse.ok("Tạo khung giờ thành công", timeSlotService.create(request)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<TimeSlotResponse>> update(@PathVariable Long id, @Valid @RequestBody TimeSlotRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Time slot updated successfully", timeSlotService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.ok("Cập nhật khung giờ thành công", timeSlotService.update(id, request)));
     }
 
     @DeleteMapping("/{id}")

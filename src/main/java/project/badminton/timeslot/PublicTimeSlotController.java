@@ -20,6 +20,6 @@ public class PublicTimeSlotController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TimeSlotResponse>>> activeTimeSlots() {
-        return ResponseEntity.ok(ApiResponse.ok("Time slots retrieved successfully", timeSlotService.activeTimeSlots()));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách khung giờ thành công", timeSlotService.activeTimeSlots()));
     }
 }

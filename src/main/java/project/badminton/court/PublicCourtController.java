@@ -21,11 +21,11 @@ public class PublicCourtController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CourtResponse>>> activeCourts() {
-        return ResponseEntity.ok(ApiResponse.ok("Courts retrieved successfully", courtService.activeCourts()));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách sân cầu lông thành công", courtService.activeCourts()));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CourtResponse>> get(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok("Court retrieved successfully", courtService.get(id)));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy thông tin sân cầu lông thành công", courtService.get(id)));
     }
 }

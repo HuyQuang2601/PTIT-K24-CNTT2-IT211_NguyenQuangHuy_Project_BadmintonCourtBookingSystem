@@ -43,7 +43,7 @@ public class CourtService {
     @Transactional
     public CourtResponse create(String managerUsername, CourtRequest request) {
         User manager = userRepository.findByUsername(managerUsername)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Manager not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy quản lý sân"));
         Court court = new Court();
         apply(request, court);
         court.setManager(manager);
@@ -60,7 +60,7 @@ public class CourtService {
     @Transactional
     public void delete(Long id) {
         if (!courtRepository.existsById(id)) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "Court not found");
+            throw new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy sân cầu lông");
         }
         courtRepository.deleteById(id);
     }
@@ -81,7 +81,7 @@ public class CourtService {
 
     public Court findById(Long id) {
         return courtRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Court not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy sân cầu lông"));
     }
 
     private void apply(CourtRequest request, Court court) {

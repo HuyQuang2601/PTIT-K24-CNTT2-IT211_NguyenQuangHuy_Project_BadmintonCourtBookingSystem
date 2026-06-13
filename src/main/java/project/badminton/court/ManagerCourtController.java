@@ -30,18 +30,18 @@ public class ManagerCourtController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<CourtResponse>>> search(@RequestParam(required = false) String keyword, Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok("Courts retrieved successfully", courtService.search(keyword, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách sân cầu lông thành công", courtService.search(keyword, pageable)));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<CourtResponse>> create(Authentication authentication, @Valid @RequestBody CourtRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Court created successfully", courtService.create(authentication.getName(), request)));
+                .body(ApiResponse.ok("Tạo sân cầu lông thành công", courtService.create(authentication.getName(), request)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<CourtResponse>> update(@PathVariable Long id, @Valid @RequestBody CourtRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok("Court updated successfully", courtService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.ok("Cập nhật sân cầu lông thành công", courtService.update(id, request)));
     }
 
     @DeleteMapping("/{id}")

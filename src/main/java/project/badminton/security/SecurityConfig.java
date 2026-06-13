@@ -21,10 +21,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService userDetailsService;
+    private final SecurityErrorResponseWriter securityErrorResponseWriter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, CustomUserDetailsService userDetailsService) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            CustomUserDetailsService userDetailsService,
+            SecurityErrorResponseWriter securityErrorResponseWriter
+    ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.userDetailsService = userDetailsService;
+        this.securityErrorResponseWriter = securityErrorResponseWriter;
     }
 
     @Bean
@@ -32,6 +38,22 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, exception) ->
+                                securityErrorResponseWriter.write(
+                                        request,
+                                        response,
+                                        org.springframework.http.HttpStatus.UNAUTHORIZED,
+                                        "Vui lòng đăng nhập để truy cập tài nguyên này"
+                                ))
+                        .accessDeniedHandler((request, response, exception) ->
+                                securityErrorResponseWriter.write(
+                                        request,
+                                        response,
+                                        org.springframework.http.HttpStatus.FORBIDDEN,
+                                        "Bạn không có quyền truy cập tài nguyên này"
+                                ))
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout", "/api/v1/auth/change-password").authenticated()

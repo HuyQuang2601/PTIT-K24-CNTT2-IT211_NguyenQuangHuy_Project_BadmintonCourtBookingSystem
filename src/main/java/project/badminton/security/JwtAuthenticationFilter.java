@@ -20,15 +20,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final SecurityErrorResponseWriter securityErrorResponseWriter;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
             CustomUserDetailsService userDetailsService,
-            TokenBlacklistService tokenBlacklistService
+            TokenBlacklistService tokenBlacklistService,
+            SecurityErrorResponseWriter securityErrorResponseWriter
     ) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.securityErrorResponseWriter = securityErrorResponseWriter;
     }
 
     @Override
@@ -42,7 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authorization.substring(7);
         if (tokenBlacklistService.isBlacklisted(token)) {
-            response.sendError(HttpStatus.FORBIDDEN.value(), "Token has been revoked");
+            securityErrorResponseWriter.write(request, response, HttpStatus.FORBIDDEN, "Token đã bị thu hồi");
             return;
         }
 

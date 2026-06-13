@@ -32,7 +32,7 @@ public class DataInitializer {
                     passwordEncoder,
                     "admin",
                     "admin@badminton.local",
-                    "System Admin",
+                    "Quản trị viên hệ thống",
                     Set.of(Role.ROLE_ADMIN)
             );
             User manager = createUserIfMissing(
@@ -40,7 +40,7 @@ public class DataInitializer {
                     passwordEncoder,
                     "manager",
                     "manager@badminton.local",
-                    "Court Manager",
+                    "Quản lý sân cầu lông",
                     Set.of(Role.ROLE_MANAGER)
             );
             createUserIfMissing(
@@ -48,7 +48,7 @@ public class DataInitializer {
                     passwordEncoder,
                     "customer",
                     "customer@badminton.local",
-                    "Demo Customer",
+                    "Khách hàng mẫu",
                     Set.of(Role.ROLE_CUSTOMER)
             );
 
@@ -61,8 +61,8 @@ public class DataInitializer {
             }
 
             if (courtRepository.count() == 0) {
-                createCourt(courtRepository, manager, "Court A1", "District 1, Ho Chi Minh City", "Indoor court with standard lighting", "120000");
-                createCourt(courtRepository, manager, "Court A2", "District 1, Ho Chi Minh City", "Student-friendly court", "100000");
+                createCourt(courtRepository, manager, "Sân A1", "Quận 1, Thành phố Hồ Chí Minh", "Sân trong nhà với hệ thống chiếu sáng tiêu chuẩn", "120000");
+                createCourt(courtRepository, manager, "Sân A2", "Quận 1, Thành phố Hồ Chí Minh", "Sân phù hợp với học sinh, sinh viên", "100000");
             }
         };
     }

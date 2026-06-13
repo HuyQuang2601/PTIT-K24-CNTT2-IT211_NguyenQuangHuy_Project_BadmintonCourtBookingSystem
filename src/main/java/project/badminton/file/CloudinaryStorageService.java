@@ -39,7 +39,7 @@ public class CloudinaryStorageService implements CloudStorageService {
         );
         Object secureUrl = result.get("secure_url");
         if (secureUrl == null) {
-            throw new IOException("Cloudinary response did not contain a secure URL");
+            throw new IOException("Phản hồi từ Cloudinary không chứa URL bảo mật");
         }
         return secureUrl.toString();
     }

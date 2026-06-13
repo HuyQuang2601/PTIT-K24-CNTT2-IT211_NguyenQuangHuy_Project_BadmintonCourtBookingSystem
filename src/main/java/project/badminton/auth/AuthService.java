@@ -80,10 +80,10 @@ public class AuthService {
     @Transactional
     public UserResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Username already exists");
+            throw new BusinessException(HttpStatus.CONFLICT, "Tên đăng nhập đã tồn tại");
         }
         if (userRepository.existsByEmail(request.email())) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Email already exists");
+            throw new BusinessException(HttpStatus.CONFLICT, "Email đã tồn tại");
         }
 
         User user = new User();
@@ -101,7 +101,7 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.username(), request.password()));
         User user = userRepository.findByUsername(request.username())
-                .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, "Invalid username or password"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, "Tên đăng nhập hoặc mật khẩu không chính xác"));
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
         String accessToken = jwtService.generateAccessToken(userDetails);
         String refreshToken = createRefreshToken(user).getToken();
@@ -111,11 +111,11 @@ public class AuthService {
     @Transactional
     public AuthResponse refresh(RefreshTokenRequest request) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(request.refreshToken())
-                .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, "Refresh token không hợp lệ"));
         if (refreshToken.isRevoked() || refreshToken.getExpiresAt().isBefore(Instant.now())) {
             refreshTokenRepository.findByUserAndRevokedFalse(refreshToken.getUser())
                     .forEach(activeToken -> activeToken.setRevoked(true));
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Refresh token expired or revoked");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Refresh token đã hết hạn hoặc bị thu hồi");
         }
         User user = refreshToken.getUser();
         refreshToken.setRevoked(true);
@@ -130,16 +130,16 @@ public class AuthService {
         tokenBlacklistService.blacklist(token, jwtService.extractExpiration(token));
         String username = jwtService.extractUsername(token);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
         refreshTokenRepository.findByUserAndRevokedFalse(user).forEach(refreshToken -> refreshToken.setRevoked(true));
     }
 
     @Transactional
     public void changePassword(String username, ChangePasswordRequest request) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Mật khẩu hiện tại không chính xác");
         }
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         refreshTokenRepository.findByUserAndRevokedFalse(user)
@@ -165,9 +165,9 @@ public class AuthService {
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(hash(request.token()))
-                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, "Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn"));
         if (resetToken.getUsedAt() != null || !resetToken.getExpiresAt().isAfter(Instant.now())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "Invalid or expired reset token");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn");
         }
 
         User user = resetToken.getUser();
@@ -197,7 +197,7 @@ public class AuthService {
 
     private String extractBearerToken(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Missing bearer token");
+            throw new BusinessException(HttpStatus.UNAUTHORIZED, "Thiếu Bearer token");
         }
         return authorizationHeader.substring(7);
     }
@@ -220,7 +220,7 @@ public class AuthService {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException("SHA-256 is not available", ex);
+            throw new IllegalStateException("Thuật toán SHA-256 không khả dụng", ex);
         }
     }
 }

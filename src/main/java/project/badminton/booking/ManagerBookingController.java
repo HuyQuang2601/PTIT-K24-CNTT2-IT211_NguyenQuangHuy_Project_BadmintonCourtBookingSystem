@@ -28,29 +28,30 @@ public class ManagerBookingController {
 
     @GetMapping("/pending")
     public ResponseEntity<ApiResponse<List<BookingResponse>>> pendingBookings() {
-        return ResponseEntity.ok(ApiResponse.ok("Pending bookings retrieved successfully", bookingService.pendingBookings()));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách lịch đặt đang chờ duyệt thành công", bookingService.pendingBookings()));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<BookingResponse>>> byDateAndStatus(
-            @RequestParam @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam @NotNull(message = "Ngày đặt sân không được để trống")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(defaultValue = "CONFIRMED") BookingStatus status
     ) {
-        return ResponseEntity.ok(ApiResponse.ok("Bookings retrieved successfully", bookingService.bookingsByDateAndStatus(date, status)));
+        return ResponseEntity.ok(ApiResponse.ok("Lấy danh sách lịch đặt sân thành công", bookingService.bookingsByDateAndStatus(date, status)));
     }
 
     @PatchMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<BookingResponse>> approve(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok("Booking approved successfully", bookingService.approve(id)));
+        return ResponseEntity.ok(ApiResponse.ok("Phê duyệt lịch đặt sân thành công", bookingService.approve(id)));
     }
 
     @PatchMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<BookingResponse>> reject(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok("Booking rejected successfully", bookingService.reject(id)));
+        return ResponseEntity.ok(ApiResponse.ok("Từ chối lịch đặt sân thành công", bookingService.reject(id)));
     }
 
     @PatchMapping("/{id}/check-in")
     public ResponseEntity<ApiResponse<BookingResponse>> checkIn(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok("Booking checked in successfully", bookingService.checkIn(id)));
+        return ResponseEntity.ok(ApiResponse.ok("Check-in lịch đặt sân thành công", bookingService.checkIn(id)));
     }
 }

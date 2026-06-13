@@ -50,19 +50,19 @@ public class TimeSlotService {
     @Transactional
     public void delete(Long id) {
         if (!timeSlotRepository.existsById(id)) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "Time slot not found");
+            throw new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy khung giờ");
         }
         timeSlotRepository.deleteById(id);
     }
 
     public TimeSlot findById(Long id) {
         return timeSlotRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Time slot not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy khung giờ"));
     }
 
     private void validate(TimeSlotRequest request) {
         if (!request.endTime().isAfter(request.startTime())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "End time must be after start time");
+            throw new BusinessException(HttpStatus.BAD_REQUEST, "Thời gian kết thúc phải sau thời gian bắt đầu");
         }
     }
 

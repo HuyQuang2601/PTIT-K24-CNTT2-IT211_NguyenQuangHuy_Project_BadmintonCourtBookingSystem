@@ -39,10 +39,10 @@ public class UserService {
     @Transactional
     public UserResponse create(UserRequest request) {
         if (userRepository.existsByUsername(request.username())) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Username already exists");
+            throw new BusinessException(HttpStatus.CONFLICT, "Tên đăng nhập đã tồn tại");
         }
         if (userRepository.existsByEmail(request.email())) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Email already exists");
+            throw new BusinessException(HttpStatus.CONFLICT, "Email đã tồn tại");
         }
         User user = new User();
         user.setUsername(request.username());
@@ -59,7 +59,7 @@ public class UserService {
     public UserResponse update(Long id, UserUpdateRequest request) {
         User user = findById(id);
         if (userRepository.existsByEmailAndIdNot(request.email(), id)) {
-            throw new BusinessException(HttpStatus.CONFLICT, "Email already exists");
+            throw new BusinessException(HttpStatus.CONFLICT, "Email đã tồn tại");
         }
         user.setEmail(request.email());
         user.setFullName(request.fullName());
@@ -72,14 +72,14 @@ public class UserService {
     @Transactional
     public void delete(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new BusinessException(HttpStatus.NOT_FOUND, "User not found");
+            throw new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng");
         }
         userRepository.deleteById(id);
     }
 
     private User findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
     }
 
     private UserResponse toResponse(User user) {

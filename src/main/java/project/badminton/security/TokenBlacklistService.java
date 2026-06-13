@@ -30,7 +30,7 @@ public class TokenBlacklistService {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(token.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException("SHA-256 is not available", ex);
+            throw new IllegalStateException("Thuật toán SHA-256 không khả dụng", ex);
         }
     }
 }
